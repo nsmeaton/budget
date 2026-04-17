@@ -85,12 +85,12 @@ After=network.target
 
 [Service]
 Type=simple
-User=pi
-WorkingDirectory=/home/pi/budget
-ExecStart=/home/pi/budget/scripts/start.sh
+User=nsmeaton
+WorkingDirectory=/home/nsmeaton/budget
+ExecStart=/home/nsmeaton/budget/scripts/start.sh
 Restart=always
 Environment=BUDGET_SECRET_KEY=your-secret-key-here
-Environment=BUDGET_DATA_DIR=/home/pi/budget/data
+Environment=BUDGET_DATA_DIR=/home/nsmeaton/budget/data
 
 [Install]
 WantedBy=multi-user.target

@@ -4,6 +4,7 @@ import pytest
 from datetime import date, datetime
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 from fastapi.testclient import TestClient
 
 # Force test database location BEFORE any app imports
@@ -24,7 +25,11 @@ from budget.backend.seed import seed_categories
 @pytest.fixture(scope="function")
 def db_engine():
     """Create a fresh in-memory SQLite database for each test."""
-    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
+    engine = create_engine(
+        "sqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
 
     @event.listens_for(engine, "connect")
     def _set_sqlite_pragma(dbapi_connection, connection_record):

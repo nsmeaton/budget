@@ -116,8 +116,9 @@ class TestDeleteRule:
         acct = Account(bank_name="X", account_name="Y")
         db_session.add(acct)
         db_session.flush()
+        from datetime import date
         tx = Transaction(
-            account_id=acct.id, date="2025-01-01", description="TESCO",
+            account_id=acct.id, date=date(2025, 1, 1), description="TESCO",
             amount=-10, direction="out", rule_id=sample_rule.id,
         )
         db_session.add(tx)

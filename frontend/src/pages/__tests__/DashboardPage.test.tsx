@@ -1,16 +1,29 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
+import React from 'react'
 import { screen, waitFor } from '@testing-library/react'
 import DashboardPage from '../DashboardPage'
 import { renderWithProviders } from '@/test/test-utils'
 
 // Mock recharts to avoid canvas/SVG rendering issues in jsdom
-vi.mock('recharts', () => {
-  const OriginalModule = vi.importActual('recharts')
+vi.mock('recharts', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('recharts')>()
+  const createMockComponent = (name: string) => {
+    return ({ children, ...props }: any) => (
+      <div data-testid={`mock-${name}`} {...props}>{children}</div>
+    )
+  }
   return {
-    ...OriginalModule,
+    ...actual,
     ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-      <div data-testid="responsive-container">{children}</div>
+      <div data-testid="responsive-container" style={{ width: 500, height: 300 }}>{children}</div>
     ),
+    BarChart: createMockComponent('BarChart'),
+    Bar: createMockComponent('Bar'),
+    XAxis: createMockComponent('XAxis'),
+    YAxis: createMockComponent('YAxis'),
+    CartesianGrid: createMockComponent('CartesianGrid'),
+    Tooltip: createMockComponent('Tooltip'),
+    Legend: createMockComponent('Legend'),
   }
 })
 

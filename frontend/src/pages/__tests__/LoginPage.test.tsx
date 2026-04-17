@@ -10,7 +10,7 @@ describe('LoginPage', () => {
 
     // Wait for loading to finish and form to appear
     await waitFor(() => {
-      expect(screen.getByText('Sign In')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /sign in/i })).toBeInTheDocument()
     })
 
     expect(screen.getByLabelText(/username/i)).toBeInTheDocument()
