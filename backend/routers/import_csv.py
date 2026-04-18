@@ -87,26 +87,41 @@ async def preview_csv(
 
 @router.post("/process")
 async def process_import(
-    req: ImportMappingRequest,
-    session_id: Optional[str] = None,
-    file: Optional[UploadFile] = File(None),
+    file: UploadFile = File(...),
+    account_id: int = Form(...),
+    date_column: int = Form(...),
+    description_column: int = Form(...),
+    amount_column: Optional[int] = Form(None),
+    debit_column: Optional[int] = Form(None),
+    credit_column: Optional[int] = Form(None),
+    balance_column: Optional[int] = Form(None),
+    date_format: str = Form("DD/MM/YYYY"),
+    has_header: bool = Form(True),
+    save_profile: bool = Form(True),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
     """Process CSV import with column mapping. Detects duplicates and applies rules."""
+    # Build a request-like object for compatibility
+    class Req:
+        pass
+    req = Req()
+    req.account_id = account_id
+    req.date_column = date_column
+    req.description_column = description_column
+    req.amount_column = amount_column
+    req.debit_column = debit_column
+    req.credit_column = credit_column
+    req.balance_column = balance_column
+    req.date_format = date_format
+    req.has_header = has_header
+    req.save_profile = save_profile
+
     # Get CSV content
-    if file:
-        content = await file.read()
-        text = content.decode("utf-8-sig")
-        raw_bytes = content
-        filename = file.filename
-    elif session_id and session_id in _import_sessions:
-        session = _import_sessions[session_id]
-        text = session["content"]
-        raw_bytes = session["raw_bytes"]
-        filename = session["filename"]
-    else:
-        raise HTTPException(status_code=400, detail="No CSV data provided")
+    content = await file.read()
+    text = content.decode("utf-8-sig")
+    raw_bytes = content
+    filename = file.filename
 
     # Verify account exists
     account = db.query(Account).get(req.account_id)
