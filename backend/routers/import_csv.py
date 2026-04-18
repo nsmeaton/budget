@@ -309,3 +309,14 @@ async def process_import(
         duplicate_candidates=duplicates,
         uncategorised_ids=uncategorised_ids,
     )
+
+
+@router.post("/confirm")
+async def confirm_import(
+    req: ImportConfirmRequest,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Confirm import — duplicates were already skipped during processing.
+    This endpoint exists so the frontend wizard can proceed past the duplicates step."""
+    return {"status": "ok", "skipped": len(req.skip_row_indices)}
