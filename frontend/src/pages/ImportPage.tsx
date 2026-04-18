@@ -56,10 +56,10 @@ export default function ImportPage() {
         const bp = acct.bank_profile
         setDateCol(bp.date_column.toString())
         setDescCol(bp.description_column.toString())
-        setAmountCol(bp.amount_column?.toString() || '')
-        setDebitCol(bp.debit_column?.toString() || '')
-        setCreditCol(bp.credit_column?.toString() || '')
-        setBalanceCol(bp.balance_column?.toString() || '')
+        setAmountCol(bp.amount_column?.toString() || '__none__')
+        setDebitCol(bp.debit_column?.toString() || '__none__')
+        setCreditCol(bp.credit_column?.toString() || '__none__')
+        setBalanceCol(bp.balance_column?.toString() || '__none__')
         setDateFormat(bp.date_format)
         setHasHeader(bp.has_header)
       }
@@ -88,10 +88,10 @@ export default function ImportPage() {
     formData.append('account_id', selectedAccountId.toString())
     formData.append('date_column', dateCol)
     formData.append('description_column', descCol)
-    if (amountCol) formData.append('amount_column', amountCol)
-    if (debitCol) formData.append('debit_column', debitCol)
-    if (creditCol) formData.append('credit_column', creditCol)
-    if (balanceCol) formData.append('balance_column', balanceCol)
+    if (amountCol && amountCol !== '__none__') formData.append('amount_column', amountCol)
+    if (debitCol && debitCol !== '__none__') formData.append('debit_column', debitCol)
+    if (creditCol && creditCol !== '__none__') formData.append('credit_column', creditCol)
+    if (balanceCol && balanceCol !== '__none__') formData.append('balance_column', balanceCol)
     formData.append('date_format', dateFormat)
     formData.append('has_header', hasHeader.toString())
     formData.append('save_profile', 'true')
@@ -329,7 +329,7 @@ export default function ImportPage() {
                 <Select value={amountCol} onValueChange={setAmountCol}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     {preview.headers.map((h, i) => (
                       <SelectItem key={i} value={i.toString()}>{h || `Col ${i}`}</SelectItem>
                     ))}
@@ -341,7 +341,7 @@ export default function ImportPage() {
                 <Select value={debitCol} onValueChange={setDebitCol}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     {preview.headers.map((h, i) => (
                       <SelectItem key={i} value={i.toString()}>{h || `Col ${i}`}</SelectItem>
                     ))}
@@ -353,7 +353,7 @@ export default function ImportPage() {
                 <Select value={creditCol} onValueChange={setCreditCol}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     {preview.headers.map((h, i) => (
                       <SelectItem key={i} value={i.toString()}>{h || `Col ${i}`}</SelectItem>
                     ))}
@@ -365,7 +365,7 @@ export default function ImportPage() {
                 <Select value={balanceCol} onValueChange={setBalanceCol}>
                   <SelectTrigger><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     {preview.headers.map((h, i) => (
                       <SelectItem key={i} value={i.toString()}>{h || `Col ${i}`}</SelectItem>
                     ))}
