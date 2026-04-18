@@ -188,7 +188,7 @@ def split_transaction(tx_id: int, children: list[TransactionSplitChild], db: Ses
     return _tx_to_response(tx, db)
 
 
-@router.post("/bulk/categorise")
+@router.post("/bulk-categorise")
 def bulk_categorise(req: BulkCategoriseRequest, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Assign category and tier to multiple transactions at once."""
     cat = db.query(Category).get(req.category_id)
