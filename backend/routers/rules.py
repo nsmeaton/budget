@@ -86,6 +86,36 @@ def delete_rule(rule_id: int, db: Session = Depends(get_db), user: User = Depend
     return {"message": "Rule deleted"}
 
 
+@router.post("/apply-all")
+def apply_all_rules(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Retroactively apply all rules to uncategorised transactions."""
+    uncategorised = db.query(Transaction).filter(
+        Transaction.category_id.is_(None),
+        Transaction.parent_id.is_(None),
+    ).all()
+
+    categorised = 0
+    conflicts = 0
+
+    for tx in uncategorised:
+        matches = apply_rules(db, tx.description)
+        if len(matches) == 1:
+            rule = matches[0]
+            tx.category_id = rule.category_id
+            tx.tier = rule.default_tier
+            tx.rule_id = rule.id
+            categorised += 1
+        elif len(matches) > 1:
+            conflicts += 1
+
+    db.commit()
+    return {
+        "checked": len(uncategorised),
+        "categorised": categorised,
+        "conflicts": conflicts,
+    }
+
+
 def apply_rules(db: Session, description: str) -> list[Rule]:
     """Find all rules that match a given description. Returns list (may have conflicts)."""
     rules = db.query(Rule).all()

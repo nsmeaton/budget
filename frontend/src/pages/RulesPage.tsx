@@ -129,6 +129,21 @@ export default function RulesPage() {
     }
   }
 
+  const [applyResult, setApplyResult] = useState<string | null>(null)
+
+  const handleApplyAll = async () => {
+    try {
+      setApplyResult('Applying...')
+      const r = await api.post('/rules/apply-all')
+      const { checked, categorised, conflicts } = r.data
+      setApplyResult(`Checked ${checked} uncategorised · ${categorised} categorised · ${conflicts} conflicts`)
+      fetchRules()
+    } catch (err) {
+      console.error(err)
+      setApplyResult('Failed to apply rules')
+    }
+  }
+
   if (loading) return <div className="text-muted-foreground">Loading rules...</div>
 
   return (
@@ -150,11 +165,20 @@ export default function RulesPage() {
               className="pl-9 w-[200px]"
             />
           </div>
+          <Button variant="outline" onClick={handleApplyAll}>
+            <Play className="h-4 w-4 mr-1" /> Apply All Rules
+          </Button>
           <Button onClick={openAdd}>
             <Plus className="h-4 w-4 mr-1" /> Add Rule
           </Button>
         </div>
       </div>
+
+      {applyResult && (
+        <div className="text-sm text-muted-foreground bg-muted/20 rounded px-3 py-2">
+          {applyResult}
+        </div>
+      )}
 
       <Card className="bg-[#1a1a1a] border-border/50">
         <CardContent className="p-0">
