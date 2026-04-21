@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Plus, Trash2 } from 'lucide-react'
+import { usePrivacy } from '@/contexts/PrivacyContext'
+import { MASKED_AMOUNT } from '@/lib/utils'
 import api from '@/api/client'
 import type { Transaction, Category } from '@/types'
 
@@ -27,6 +29,7 @@ interface SplitChild {
 const TIERS = ['Essential', 'Optional', 'Discretionary', 'Savings', 'Transfer']
 
 export function SplitTransactionModal({ open, onOpenChange, transaction, onSaved }: SplitTransactionModalProps) {
+  const { hideAmounts } = usePrivacy()
   const [categories, setCategories] = useState<Category[]>([])
   const [children, setChildren] = useState<SplitChild[]>([
     { amount: '', description: '', category_id: '', tier: '' },
@@ -96,12 +99,12 @@ export function SplitTransactionModal({ open, onOpenChange, transaction, onSaved
         </DialogHeader>
         <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            {transaction.description} — £{Math.abs(transaction.amount).toFixed(2)}
+            {transaction.description} — {hideAmounts ? MASKED_AMOUNT : `£${Math.abs(transaction.amount).toFixed(2)}`}
           </p>
           <p className="text-sm">
-            Allocated: £{totalAllocated.toFixed(2)} | Remaining:{' '}
+            Allocated: {hideAmounts ? MASKED_AMOUNT : `£${totalAllocated.toFixed(2)}`} | Remaining:{' '}
             <span className={remaining < 0 ? 'text-red-400' : remaining > 0.01 ? 'text-amber-400' : 'text-green-400'}>
-              £{remaining.toFixed(2)}
+              {hideAmounts ? MASKED_AMOUNT : `£${remaining.toFixed(2)}`}
             </span>
           </p>
         </div>

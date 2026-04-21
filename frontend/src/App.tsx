@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DateRangeProvider } from './contexts/DateRangeContext'
+import { PrivacyProvider } from './contexts/PrivacyContext'
 import AppLayout from './components/layout/AppLayout'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -28,19 +29,21 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <DateRangeProvider>
-              <AppLayout>
-                <Routes>
-                  <Route path="/" element={<DashboardPage />} />
-                  <Route path="/month" element={<MonthOverviewPage />} />
-                  <Route path="/trends" element={<TrendsPage />} />
-                  <Route path="/transactions" element={<TransactionsPage />} />
-                  <Route path="/import" element={<ImportPage />} />
-                  <Route path="/categories" element={<CategoriesPage />} />
-                  <Route path="/rules" element={<RulesPage />} />
-                  <Route path="/accounts" element={<AccountsPage />} />
-                  <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </AppLayout>
+              <PrivacyProvider>
+                <AppLayout>
+                  <Routes>
+                    <Route path="/" element={<DashboardPage />} />
+                    <Route path="/month" element={<MonthOverviewPage />} />
+                    <Route path="/trends" element={<TrendsPage />} />
+                    <Route path="/transactions" element={<TransactionsPage />} />
+                    <Route path="/import" element={<ImportPage />} />
+                    <Route path="/categories" element={<CategoriesPage />} />
+                    <Route path="/rules" element={<RulesPage />} />
+                    <Route path="/accounts" element={<AccountsPage />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </AppLayout>
+              </PrivacyProvider>
             </DateRangeProvider>
           </ProtectedRoute>
         }

@@ -11,14 +11,17 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
 import { ChevronDown, ChevronRight, Pencil, Trash2, Plus } from 'lucide-react'
-import { formatCurrency } from '@/lib/utils'
+import { maskedCurrency } from '@/lib/utils'
+import { usePrivacy } from '@/contexts/PrivacyContext'
 import api from '@/api/client'
 import type { CategoryGroup, Category } from '@/types'
 
 const TIERS = ['Essential', 'Optional', 'Discretionary', 'Savings', 'Transfer']
 
 export default function CategoriesPage() {
+  const { hideAmounts } = usePrivacy()
   const [groups, setGroups] = useState<CategoryGroup[]>([])
+  const fc = (amount: number) => maskedCurrency(amount, hideAmounts)
   const [loading, setLoading] = useState(true)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   const [editCat, setEditCat] = useState<Category | null>(null)
@@ -162,7 +165,7 @@ export default function CategoriesPage() {
                     </TableCell>
                     <TableCell />
                     <TableCell className="text-right text-muted-foreground">{group.transaction_count}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{formatCurrency(group.total_spend)}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{fc(group.total_spend)}</TableCell>
                     <TableCell />
                   </TableRow>
                   {expanded.has(group.id) &&
@@ -171,7 +174,7 @@ export default function CategoriesPage() {
                         <TableCell className="pl-10">{cat.name}</TableCell>
                         <TableCell><TierBadge tier={cat.default_tier} /></TableCell>
                         <TableCell className="text-right">{cat.transaction_count}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(cat.total_spend)}</TableCell>
+                        <TableCell className="text-right">{fc(cat.total_spend)}</TableCell>
                         <TableCell>
                           <div className="flex gap-1">
                             <button

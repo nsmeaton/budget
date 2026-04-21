@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useDateRange } from '@/contexts/DateRangeContext'
-import { formatCurrency, formatPercent, monthLabel } from '@/lib/utils'
+import { usePrivacy } from '@/contexts/PrivacyContext'
+import { formatCurrency, maskedCurrency, formatPercent, monthLabel, MASKED_AMOUNT } from '@/lib/utils'
 import { TIER_CHART_COLORS } from '@/components/shared/TierBadge'
 import api from '@/api/client'
 import type { DashboardResponse } from '@/types'
@@ -11,8 +12,11 @@ import {
 
 export default function DashboardPage() {
   const { dateParams } = useDateRange()
+  const { hideAmounts } = usePrivacy()
   const [data, setData] = useState<DashboardResponse | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const fc = (amount: number) => maskedCurrency(amount, hideAmounts)
 
   useEffect(() => {
     setLoading(true)
@@ -48,6 +52,8 @@ export default function DashboardPage() {
 
   const totalSavingsChart = monthly_breakdown.reduce((s, m) => s + m.savings, 0)
 
+  const tooltipFormatter = (value: any) => hideAmounts ? MASKED_AMOUNT : formatCurrency(Number(value))
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -56,32 +62,32 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <KPICard
           title="Total Income"
-          value={formatCurrency(kpis.total_income)}
+          value={fc(kpis.total_income)}
           change={kpis.income_change_pct}
           color="text-green-400"
         />
         <KPICard
           title="Total Spending"
-          value={formatCurrency(kpis.total_spending)}
+          value={fc(kpis.total_spending)}
           subtitle="Essential + Optional + Disc."
           color="text-red-400"
         />
         <KPICard
           title="Avg Monthly Essential"
-          value={formatCurrency(kpis.avg_monthly_essential)}
+          value={fc(kpis.avg_monthly_essential)}
           subtitle="Your baseline cost of living"
           color="text-red-300"
           badge="KEY STAT"
         />
         <KPICard
           title="Avg Monthly Ess. + Opt."
-          value={formatCurrency(kpis.avg_monthly_essential_optional)}
+          value={fc(kpis.avg_monthly_essential_optional)}
           subtitle="Comfortable monthly spend"
           color="text-amber-400"
         />
         <KPICard
           title="Total Savings"
-          value={formatCurrency(kpis.total_savings)}
+          value={fc(kpis.total_savings)}
           subtitle={`Savings rate: ${kpis.savings_rate.toFixed(1)}%`}
           color="text-green-400"
         />
@@ -98,10 +104,11 @@ export default function DashboardPage() {
               <BarChart data={incomeVsSpending}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis dataKey="month" tick={{ fill: '#888', fontSize: 12 }} />
-                <YAxis tick={{ fill: '#888', fontSize: 12 }} />
+                <YAxis tick={{ fill: '#888', fontSize: 12 }} tickFormatter={v => hideAmounts ? '•••' : v} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
                   labelStyle={{ color: '#ccc' }}
+                  formatter={tooltipFormatter}
                 />
                 <Legend />
                 <Bar dataKey="Income" fill="#4ade80" radius={[2, 2, 0, 0]} />
@@ -120,10 +127,11 @@ export default function DashboardPage() {
               <BarChart data={spendingByTier}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis dataKey="month" tick={{ fill: '#888', fontSize: 12 }} />
-                <YAxis tick={{ fill: '#888', fontSize: 12 }} />
+                <YAxis tick={{ fill: '#888', fontSize: 12 }} tickFormatter={v => hideAmounts ? '•••' : v} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
                   labelStyle={{ color: '#ccc' }}
+                  formatter={tooltipFormatter}
                 />
                 <Legend />
                 <Bar dataKey="Essential" stackId="a" fill={TIER_CHART_COLORS.Essential} />
@@ -141,7 +149,7 @@ export default function DashboardPage() {
           <CardTitle className="text-sm font-medium">
             Savings per Month
             <span className="ml-2 text-xs text-muted-foreground">
-              Total: {formatCurrency(totalSavingsChart)}
+              Total: {fc(totalSavingsChart)}
             </span>
           </CardTitle>
         </CardHeader>
@@ -150,10 +158,11 @@ export default function DashboardPage() {
             <BarChart data={savingsPerMonth}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
               <XAxis dataKey="month" tick={{ fill: '#888', fontSize: 12 }} />
-              <YAxis tick={{ fill: '#888', fontSize: 12 }} />
+              <YAxis tick={{ fill: '#888', fontSize: 12 }} tickFormatter={v => hideAmounts ? '•••' : v} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
                 labelStyle={{ color: '#ccc' }}
+                formatter={tooltipFormatter}
               />
               <Bar dataKey="Savings" fill="#a78bfa" radius={[2, 2, 0, 0]} />
             </BarChart>
@@ -168,7 +177,7 @@ export default function DashboardPage() {
           <p className="text-xs text-muted-foreground">Click any cell to drill in</p>
         </CardHeader>
         <CardContent className="overflow-x-auto">
-          <MonthlyBreakdownTable breakdown={monthly_breakdown} />
+          <MonthlyBreakdownTable breakdown={monthly_breakdown} hideAmounts={hideAmounts} />
         </CardContent>
       </Card>
     </div>
@@ -206,8 +215,9 @@ function KPICard({ title, value, subtitle, change, color, badge }: {
   )
 }
 
-function MonthlyBreakdownTable({ breakdown }: { breakdown: DashboardResponse['monthly_breakdown'] }) {
+function MonthlyBreakdownTable({ breakdown, hideAmounts }: { breakdown: DashboardResponse['monthly_breakdown']; hideAmounts: boolean }) {
   const months = breakdown.sort((a, b) => a.month.localeCompare(b.month))
+  const fc = (amount: number) => maskedCurrency(amount, hideAmounts)
 
   type RowDef = { label: string; key: string; indent?: boolean; bold?: boolean; color?: string }
   const rows: RowDef[] = [
@@ -250,12 +260,12 @@ function MonthlyBreakdownTable({ breakdown }: { breakdown: DashboardResponse['mo
               const val = (m as any)[row.key] || 0
               return (
                 <td key={m.month} className={`text-right py-1.5 px-2 ${row.color || ''} ${row.bold ? 'font-semibold' : ''}`}>
-                  {val !== 0 ? formatCurrency(Math.abs(val)) : '—'}
+                  {val !== 0 ? fc(Math.abs(val)) : '—'}
                 </td>
               )
             })}
             <td className={`text-right py-1.5 px-2 font-semibold ${row.color || ''}`}>
-              {formatCurrency(Math.abs(getTotal(row.key)))}
+              {fc(Math.abs(getTotal(row.key)))}
             </td>
           </tr>
         ))}

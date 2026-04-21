@@ -9,7 +9,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog'
 import { Pencil, Trash2, Plus, Upload, List } from 'lucide-react'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, maskedCurrency, formatDate } from '@/lib/utils'
+import { usePrivacy } from '@/contexts/PrivacyContext'
 import api from '@/api/client'
 import type { Account } from '@/types'
 
@@ -32,6 +33,7 @@ function getBankInitials(name: string): string {
 
 export default function AccountsPage() {
   const navigate = useNavigate()
+  const { hideAmounts } = usePrivacy()
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loading, setLoading] = useState(true)
   const [editAcct, setEditAcct] = useState<Account | null>(null)
@@ -142,7 +144,7 @@ export default function AccountsPage() {
                     <div className="text-right">
                       <p className="text-xl font-bold">
                         {acct.current_balance != null
-                          ? formatCurrency(acct.current_balance)
+                          ? maskedCurrency(acct.current_balance, hideAmounts)
                           : '—'}
                       </p>
                       <div className="flex gap-1 mt-2">

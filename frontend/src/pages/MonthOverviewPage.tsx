@@ -5,7 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/table'
 import { TierBadge, TIER_CHART_COLORS } from '@/components/shared/TierBadge'
 import { AmountDisplay } from '@/components/shared/AmountDisplay'
-import { formatCurrency } from '@/lib/utils'
+import { usePrivacy } from '@/contexts/PrivacyContext'
+import { formatCurrency, maskedCurrency, MASKED_AMOUNT } from '@/lib/utils'
 import { ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import api from '@/api/client'
 import type { Transaction, Category } from '@/types'
@@ -34,6 +35,7 @@ type SortDir = 'asc' | 'desc'
 
 export default function MonthOverviewPage() {
   const now = new Date()
+  const { hideAmounts } = usePrivacy()
   const [year, setYear] = useState(now.getFullYear())
   const [month, setMonth] = useState(now.getMonth() + 1)
   const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -50,6 +52,9 @@ export default function MonthOverviewPage() {
   const [sortDir, setSortDir] = useState<SortDir>('desc')
 
   const { from, to } = getMonthRange(year, month)
+
+  const fc = (amount: number) => maskedCurrency(amount, hideAmounts)
+  const tooltipFormatter = (value: any) => hideAmounts ? MASKED_AMOUNT : formatCurrency(Number(value))
 
   useEffect(() => {
     api.get('/categories').then(r => setCategories(r.data)).catch(console.error)
@@ -238,33 +243,33 @@ export default function MonthOverviewPage() {
             <Card className="bg-[#1a1a1a] border-border/50">
               <CardContent className="p-5">
                 <p className="text-xs text-muted-foreground">Income</p>
-                <p className="text-2xl font-bold text-green-400">{formatCurrency(incomeVsSpending.income)}</p>
+                <p className="text-2xl font-bold text-green-400">{fc(incomeVsSpending.income)}</p>
               </CardContent>
             </Card>
             <Card className="bg-[#1a1a1a] border-border/50">
               <CardContent className="p-5">
                 <p className="text-xs text-muted-foreground">Spending</p>
-                <p className="text-2xl font-bold text-red-400">{formatCurrency(incomeVsSpending.spending)}</p>
+                <p className="text-2xl font-bold text-red-400">{fc(incomeVsSpending.spending)}</p>
               </CardContent>
             </Card>
             <Card className="bg-[#1a1a1a] border-border/50">
               <CardContent className="p-5">
                 <p className="text-xs text-muted-foreground">Savings</p>
-                <p className="text-2xl font-bold text-purple-400">{formatCurrency(incomeVsSpending.savings)}</p>
+                <p className="text-2xl font-bold text-purple-400">{fc(incomeVsSpending.savings)}</p>
               </CardContent>
             </Card>
             <Card className="bg-[#1a1a1a] border-border/50">
               <CardContent className="p-5">
                 <p className="text-xs text-muted-foreground">Net</p>
                 <p className={`text-2xl font-bold ${incomeVsSpending.income - incomeVsSpending.spending - incomeVsSpending.savings >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {formatCurrency(incomeVsSpending.income - incomeVsSpending.spending - incomeVsSpending.savings)}
+                  {fc(incomeVsSpending.income - incomeVsSpending.spending - incomeVsSpending.savings)}
                 </p>
               </CardContent>
             </Card>
           </div>
 
           {/* Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             {/* Income vs Spending bar */}
             <Card className="bg-[#1a1a1a] border-border/50">
               <CardHeader>
@@ -274,12 +279,12 @@ export default function MonthOverviewPage() {
                 <ResponsiveContainer width="100%" height={250}>
                   <BarChart data={summaryChartData} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                    <XAxis type="number" tick={{ fill: '#888', fontSize: 12 }} />
+                    <XAxis type="number" tick={{ fill: '#888', fontSize: 12 }} tickFormatter={v => hideAmounts ? '•••' : v} />
                     <YAxis dataKey="name" type="category" tick={{ fill: '#888', fontSize: 12 }} width={70} />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
                       labelStyle={{ color: '#ccc' }}
-                      formatter={(value: any) => formatCurrency(Number(value))}
+                      formatter={tooltipFormatter}
                     />
                     <Bar dataKey="value" radius={[0, 2, 2, 0]}>
                       {summaryChartData.map((entry, i) => (
@@ -306,7 +311,7 @@ export default function MonthOverviewPage() {
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                       labelLine={false}
                     >
                       {tierData.map((entry, i) => (
@@ -315,8 +320,40 @@ export default function MonthOverviewPage() {
                     </Pie>
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
-                      formatter={(value: any) => formatCurrency(Number(value))}
+                      formatter={tooltipFormatter}
                     />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            {/* Spending by category pie */}
+            <Card className="bg-[#1a1a1a] border-border/50">
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">Spending by Category</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={categoryData}
+                      dataKey="value"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={80}
+                      label={({ name, percent }: any) => `${((percent ?? 0) * 100).toFixed(0)}%`}
+                      labelLine={true}
+                    >
+                      {categoryData.map((_entry, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
+                      formatter={tooltipFormatter}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 11 }} />
                   </PieChart>
                 </ResponsiveContainer>
               </CardContent>
@@ -328,10 +365,10 @@ export default function MonthOverviewPage() {
                 <CardTitle className="text-sm font-medium">Top Spending Categories</CardTitle>
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={250}>
+                <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={categoryData} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                    <XAxis type="number" tick={{ fill: '#888', fontSize: 12 }} />
+                    <XAxis type="number" tick={{ fill: '#888', fontSize: 12 }} tickFormatter={v => hideAmounts ? '•••' : v} />
                     <YAxis
                       dataKey="name"
                       type="category"
@@ -341,7 +378,7 @@ export default function MonthOverviewPage() {
                     />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
-                      formatter={(value: any) => formatCurrency(Number(value))}
+                      formatter={tooltipFormatter}
                     />
                     <Bar dataKey="value" fill="#60a5fa" radius={[0, 2, 2, 0]} />
                   </BarChart>
@@ -477,10 +514,10 @@ export default function MonthOverviewPage() {
                         {totals.count} transaction{totals.count !== 1 ? 's' : ''}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {totals.income > 0 && <span className="text-green-400">In: {formatCurrency(totals.income)}</span>}
+                        {totals.income > 0 && <span className="text-green-400">In: {fc(totals.income)}</span>}
                       </TableCell>
                       <TableCell className="text-right text-sm">
-                        {totals.spending > 0 && <span className="text-red-400">Out: {formatCurrency(totals.spending)}</span>}
+                        {totals.spending > 0 && <span className="text-red-400">Out: {fc(totals.spending)}</span>}
                       </TableCell>
                     </TableRow>
                   )}

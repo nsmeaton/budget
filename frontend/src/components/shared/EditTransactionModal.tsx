@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { TierBadge } from '@/components/shared/TierBadge'
+import { usePrivacy } from '@/contexts/PrivacyContext'
+import { maskedCurrency } from '@/lib/utils'
 import api from '@/api/client'
 import type { Transaction, Category } from '@/types'
 
@@ -21,7 +23,9 @@ const TIERS = ['Essential', 'Optional', 'Discretionary', 'Savings', 'Transfer']
 const FLOW_TYPES = ['income', 'spending', 'transfer']
 
 export function EditTransactionModal({ open, onOpenChange, transaction, onSaved }: EditTransactionModalProps) {
+  const { hideAmounts } = usePrivacy()
   const [categories, setCategories] = useState<Category[]>([])
+  const fc = (amount: number) => maskedCurrency(amount, hideAmounts)
   const [categoryId, setCategoryId] = useState<string>('')
   const [tier, setTier] = useState<string>('')
   const [flowType, setFlowType] = useState<string>('')
@@ -72,7 +76,7 @@ export function EditTransactionModal({ open, onOpenChange, transaction, onSaved 
           <div>
             <p className="text-sm text-muted-foreground">{transaction.date}</p>
             <p className="font-medium">{transaction.description}</p>
-            <p className="text-sm text-muted-foreground">£{Math.abs(transaction.amount).toFixed(2)}</p>
+            <p className="text-sm text-muted-foreground">{fc(Math.abs(transaction.amount))}</p>
           </div>
 
           <div className="space-y-2">

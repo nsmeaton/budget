@@ -1,5 +1,6 @@
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, MASKED_AMOUNT } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { usePrivacy } from '@/contexts/PrivacyContext'
 
 interface AmountDisplayProps {
   amount: number
@@ -10,6 +11,7 @@ interface AmountDisplayProps {
 }
 
 export function AmountDisplay({ amount, direction, tier, flowType, className }: AmountDisplayProps) {
+  const { hideAmounts } = usePrivacy()
   const isNeutral = tier === 'Savings' || tier === 'Transfer' || flowType === 'transfer'
   const isIncome = !isNeutral && (flowType === 'income' || (direction === 'in' && flowType !== 'spending'))
 
@@ -17,13 +19,13 @@ export function AmountDisplay({ amount, direction, tier, flowType, className }: 
   let colorClass: string
 
   if (isNeutral) {
-    displayAmount = formatCurrency(Math.abs(amount))
+    displayAmount = hideAmounts ? MASKED_AMOUNT : formatCurrency(Math.abs(amount))
     colorClass = 'text-gray-300'
   } else if (isIncome) {
-    displayAmount = `+${formatCurrency(Math.abs(amount))}`
+    displayAmount = hideAmounts ? `+${MASKED_AMOUNT}` : `+${formatCurrency(Math.abs(amount))}`
     colorClass = 'text-green-400'
   } else {
-    displayAmount = `-${formatCurrency(Math.abs(amount))}`
+    displayAmount = hideAmounts ? `-${MASKED_AMOUNT}` : `-${formatCurrency(Math.abs(amount))}`
     colorClass = 'text-red-400'
   }
 

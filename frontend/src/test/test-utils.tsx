@@ -3,6 +3,7 @@ import { render, type RenderOptions } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { DateRangeProvider } from '@/contexts/DateRangeContext'
+import { PrivacyProvider } from '@/contexts/PrivacyContext'
 
 interface WrapperOptions {
   route?: string
@@ -17,6 +18,9 @@ function createWrapper({ route = '/', withAuth = false, withDateRange = false }:
     if (withDateRange) {
       content = <DateRangeProvider>{content}</DateRangeProvider>
     }
+
+    content = <PrivacyProvider>{content}</PrivacyProvider>
+
     if (withAuth) {
       content = <AuthProvider>{content}</AuthProvider>
     }

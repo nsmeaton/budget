@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useDateRange } from '@/contexts/DateRangeContext'
-import { formatCurrency, monthLabel } from '@/lib/utils'
+import { usePrivacy } from '@/contexts/PrivacyContext'
+import { formatCurrency, maskedCurrency, monthLabel, MASKED_AMOUNT } from '@/lib/utils'
 import { TIER_CHART_COLORS } from '@/components/shared/TierBadge'
 import api from '@/api/client'
 import type { TrendsResponse } from '@/types'
@@ -14,8 +15,12 @@ const CATEGORY_COLORS = ['#f87171', '#fbbf24', '#60a5fa', '#a78bfa', '#34d399']
 
 export default function TrendsPage() {
   const { dateParams } = useDateRange()
+  const { hideAmounts } = usePrivacy()
   const [data, setData] = useState<TrendsResponse | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const fc = (amount: number) => maskedCurrency(amount, hideAmounts)
+  const tooltipFormatter = (value: any) => hideAmounts ? MASKED_AMOUNT : formatCurrency(Number(value))
 
   useEffect(() => {
     setLoading(true)
@@ -79,10 +84,11 @@ export default function TrendsPage() {
               <LineChart data={categoryLineData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis dataKey="month" tick={{ fill: '#888', fontSize: 12 }} />
-                <YAxis tick={{ fill: '#888', fontSize: 12 }} />
+                <YAxis tick={{ fill: '#888', fontSize: 12 }} tickFormatter={v => hideAmounts ? '•••' : v} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
                   labelStyle={{ color: '#ccc' }}
+                  formatter={tooltipFormatter}
                 />
                 <Legend />
                 {data.category_trends.map((ct, i) => (
@@ -110,10 +116,11 @@ export default function TrendsPage() {
               <AreaChart data={tierAreaData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#333" />
                 <XAxis dataKey="month" tick={{ fill: '#888', fontSize: 12 }} />
-                <YAxis tick={{ fill: '#888', fontSize: 12 }} />
+                <YAxis tick={{ fill: '#888', fontSize: 12 }} tickFormatter={v => hideAmounts ? '•••' : v} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
                   labelStyle={{ color: '#ccc' }}
+                  formatter={tooltipFormatter}
                 />
                 <Legend />
                 <Area type="monotone" dataKey="Essential" stackId="1" fill={TIER_CHART_COLORS.Essential} stroke={TIER_CHART_COLORS.Essential} fillOpacity={0.6} />
@@ -135,10 +142,11 @@ export default function TrendsPage() {
             <BarChart data={incVsSpend}>
               <CartesianGrid strokeDasharray="3 3" stroke="#333" />
               <XAxis dataKey="month" tick={{ fill: '#888', fontSize: 12 }} />
-              <YAxis tick={{ fill: '#888', fontSize: 12 }} />
+              <YAxis tick={{ fill: '#888', fontSize: 12 }} tickFormatter={v => hideAmounts ? '•••' : v} />
               <Tooltip
                 contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
                 labelStyle={{ color: '#ccc' }}
+                formatter={tooltipFormatter}
               />
               <Legend />
               <Bar dataKey="Income" fill="#4ade80" radius={[2, 2, 0, 0]} />
@@ -161,7 +169,7 @@ export default function TrendsPage() {
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-sm font-medium">{cat.category_name}</span>
-                    <span className="text-sm text-muted-foreground">{formatCurrency(cat.total)}</span>
+                    <span className="text-sm text-muted-foreground">{fc(cat.total)}</span>
                   </div>
                   <div className="h-2 bg-[#222] rounded-full overflow-hidden">
                     <div
