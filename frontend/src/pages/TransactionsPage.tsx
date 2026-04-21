@@ -43,6 +43,7 @@ export default function TransactionsPage() {
   const [bulkCatOpen, setBulkCatOpen] = useState(false)
   const [bulkCatId, setBulkCatId] = useState('')
   const [bulkTier, setBulkTier] = useState('')
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false)
 
   const fetchTransactions = useCallback(async () => {
     setLoading(true)
@@ -115,6 +116,20 @@ export default function TransactionsPage() {
       })
       setSelected(new Set())
       setBulkCatOpen(false)
+      fetchTransactions()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selected.size === 0) return
+    try {
+      await api.post('/transactions/bulk-delete', {
+        transaction_ids: Array.from(selected),
+      })
+      setSelected(new Set())
+      setBulkDeleteOpen(false)
       fetchTransactions()
     } catch (err) {
       console.error(err)
@@ -252,6 +267,9 @@ export default function TransactionsPage() {
               <span className="text-sm text-primary">{selected.size} selected</span>
               <Button size="sm" variant="outline" onClick={() => setBulkCatOpen(true)}>
                 Bulk Categorise
+              </Button>
+              <Button size="sm" variant="outline" className="text-red-400 border-red-400/50 hover:bg-red-400/10" onClick={() => setBulkDeleteOpen(true)}>
+                Bulk Delete
               </Button>
               <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
                 Clear
@@ -459,6 +477,16 @@ export default function TransactionsPage() {
         description={`Delete "${deleteTx?.description}"? This cannot be undone.`}
         onConfirm={handleDelete}
         confirmLabel="Delete"
+        destructive
+      />
+
+      <ConfirmDialog
+        open={bulkDeleteOpen}
+        onOpenChange={() => setBulkDeleteOpen(false)}
+        title="Bulk Delete"
+        description={`Delete ${selected.size} selected transaction${selected.size !== 1 ? 's' : ''}? This cannot be undone.`}
+        onConfirm={handleBulkDelete}
+        confirmLabel="Delete All"
         destructive
       />
 

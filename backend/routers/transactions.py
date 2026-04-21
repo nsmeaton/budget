@@ -224,3 +224,30 @@ def bulk_categorise(req: BulkCategoriseRequest, db: Session = Depends(get_db), u
 
     db.commit()
     return {"updated": updated}
+
+
+@router.post("/bulk-delete")
+def bulk_delete(req: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    """Delete multiple transactions at once."""
+    tx_ids = req.get("transaction_ids", [])
+    if not tx_ids:
+        raise HTTPException(status_code=400, detail="No transaction IDs provided")
+
+    deleted = 0
+    for tx_id in tx_ids:
+        tx = db.query(Transaction).get(tx_id)
+        if tx:
+            # Handle split children
+            if tx.parent_id:
+                siblings = db.query(Transaction).filter(
+                    Transaction.parent_id == tx.parent_id, Transaction.id != tx.id
+                ).count()
+                if siblings == 0:
+                    parent = db.query(Transaction).get(tx.parent_id)
+                    if parent:
+                        parent.is_split = False
+            db.delete(tx)
+            deleted += 1
+
+    db.commit()
+    return {"deleted": deleted}
