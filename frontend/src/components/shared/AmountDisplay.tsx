@@ -10,18 +10,18 @@ interface AmountDisplayProps {
 }
 
 export function AmountDisplay({ amount, direction, tier, flowType, className }: AmountDisplayProps) {
-  const isIncome = flowType === 'income' || direction === 'in'
   const isNeutral = tier === 'Savings' || tier === 'Transfer' || flowType === 'transfer'
+  const isIncome = !isNeutral && (flowType === 'income' || (direction === 'in' && flowType !== 'spending'))
 
   let displayAmount: string
   let colorClass: string
 
-  if (isIncome) {
-    displayAmount = `+${formatCurrency(Math.abs(amount))}`
-    colorClass = 'text-green-400'
-  } else if (isNeutral) {
+  if (isNeutral) {
     displayAmount = formatCurrency(Math.abs(amount))
     colorClass = 'text-gray-300'
+  } else if (isIncome) {
+    displayAmount = `+${formatCurrency(Math.abs(amount))}`
+    colorClass = 'text-green-400'
   } else {
     displayAmount = `-${formatCurrency(Math.abs(amount))}`
     colorClass = 'text-red-400'

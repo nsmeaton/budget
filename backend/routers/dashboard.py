@@ -57,7 +57,14 @@ def get_dashboard(
 
         mb = months[month_key]
 
-        if tx.flow_type == "income" or tx.direction == "in":
+        # Check tier-based classifications first (user may have overridden flow_type)
+        if tx.tier == "Savings":
+            mb.savings += abs(tx.amount)
+
+        elif tx.tier == "Transfer" or tx.flow_type == "transfer":
+            mb.transfers += abs(tx.amount)
+
+        elif tx.flow_type == "income" or (tx.direction == "in" and tx.flow_type != "spending"):
             income_type = (tx.income_type or "").lower()
             if income_type == "salary":
                 mb.income_salary += tx.amount
@@ -68,16 +75,10 @@ def get_dashboard(
             elif income_type == "investments":
                 mb.income_investments += tx.amount
             else:
-                mb.income_salary += tx.amount  # Default uncategorised income to salary
-            mb.income_total += tx.amount
+                mb.income_salary += abs(tx.amount)
+            mb.income_total += abs(tx.amount)
 
-        elif tx.tier == "Savings":
-            mb.savings += abs(tx.amount)
-
-        elif tx.tier == "Transfer":
-            mb.transfers += abs(tx.amount)
-
-        elif tx.direction == "out":
+        elif tx.direction == "out" or tx.flow_type == "spending":
             tier = tx.tier or ""
             if tier == "Essential":
                 mb.spending_essential += abs(tx.amount)
