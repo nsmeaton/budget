@@ -162,7 +162,7 @@ def delete_transaction(tx_id: int, db: Session = Depends(get_db), user: User = D
 
 
 @router.post("/{tx_id}/split", response_model=TransactionResponse)
-def split_transaction(tx_id: int, children: list[TransactionSplitChild], db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+def split_transaction(tx_id: int, body: dict, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Split a transaction into multiple child entries."""
     tx = db.query(Transaction).get(tx_id)
     if not tx:
@@ -172,29 +172,38 @@ def split_transaction(tx_id: int, children: list[TransactionSplitChild], db: Ses
     if tx.parent_id:
         raise HTTPException(status_code=400, detail="Cannot split a child transaction")
 
-    # Validate children sum to parent amount
-    child_sum = sum(c.amount for c in children)
-    if abs(child_sum - tx.amount) > 0.01:
+    children_data = body.get("children", [])
+    if len(children_data) < 2:
+        raise HTTPException(status_code=400, detail="Need at least 2 children to split")
+
+    # Validate children sum to parent amount (compare absolute values)
+    child_sum = sum(c.get("amount", 0) for c in children_data)
+    if abs(child_sum - abs(tx.amount)) > 0.01:
         raise HTTPException(
             status_code=400,
-            detail=f"Children sum ({child_sum}) must equal parent amount ({tx.amount})"
+            detail=f"Children sum ({child_sum}) must equal parent amount ({abs(tx.amount)})"
         )
 
     tx.is_split = True
-    for child_data in children:
+    for child_data in children_data:
+        # Make child amount match parent's sign
+        child_amount = child_data.get("amount", 0)
+        if tx.amount < 0:
+            child_amount = -abs(child_amount)
+
         child = Transaction(
             account_id=tx.account_id,
             parent_id=tx.id,
             date=tx.date,
-            description=child_data.description or tx.description,
-            amount=child_data.amount,
+            description=child_data.get("description") or tx.description,
+            amount=child_amount,
             balance=None,
             direction=tx.direction,
-            flow_type=child_data.flow_type or tx.flow_type,
-            income_type=child_data.income_type,
-            tier=child_data.tier,
-            category_id=child_data.category_id,
-            item=child_data.item,
+            flow_type=child_data.get("flow_type") or tx.flow_type,
+            income_type=child_data.get("income_type"),
+            tier=child_data.get("tier"),
+            category_id=child_data.get("category_id"),
+            item=child_data.get("item"),
             source_file_id=tx.source_file_id,
         )
         db.add(child)
