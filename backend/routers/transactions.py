@@ -48,6 +48,8 @@ def list_transactions(
     date_to: Optional[date] = None,
     search: Optional[str] = None,
     uncategorised_only: bool = False,
+    sort_by: Optional[str] = Query(None, regex="^(date|description|amount|tier|category_name)$"),
+    sort_dir: Optional[str] = Query("desc", regex="^(asc|desc)$"),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -95,7 +97,21 @@ def list_transactions(
         q = q.filter(Transaction.category_id.is_(None))
 
     total = q.count()
-    txs = q.order_by(Transaction.date.desc(), Transaction.id.desc()).offset(
+
+    # Dynamic sorting
+    sort_column_map = {
+        'date': Transaction.date,
+        'description': Transaction.description,
+        'amount': Transaction.amount,
+        'tier': Transaction.tier,
+    }
+    sort_col = sort_column_map.get(sort_by or 'date', Transaction.date)
+    if sort_dir == 'asc':
+        q = q.order_by(sort_col.asc(), Transaction.id.asc())
+    else:
+        q = q.order_by(sort_col.desc(), Transaction.id.desc())
+
+    txs = q.offset(
         (page - 1) * page_size
     ).limit(page_size).all()
 

@@ -11,9 +11,12 @@ import { AmountDisplay } from '@/components/shared/AmountDisplay'
 import { EditTransactionModal } from '@/components/shared/EditTransactionModal'
 import { SplitTransactionModal } from '@/components/shared/SplitTransactionModal'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
-import { Search, Pencil, Trash2, Copy, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Pencil, Trash2, Copy, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react'
 import api from '@/api/client'
 import type { Transaction, TransactionListResponse, Account, Category } from '@/types'
+
+type SortField = 'date' | 'description' | 'amount' | 'tier' | null
+type SortDir = 'asc' | 'desc'
 
 export default function TransactionsPage() {
   const { dateParams } = useDateRange()
@@ -27,7 +30,11 @@ export default function TransactionsPage() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [tierFilter, setTierFilter] = useState('all')
   const [flowFilter, setFlowFilter] = useState('all')
+  const [uncategorisedOnly, setUncategorisedOnly] = useState(false)
   const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [sortBy, setSortBy] = useState<SortField>('date')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [jumpPage, setJumpPage] = useState('')
 
   // Modals
   const [editTx, setEditTx] = useState<Transaction | null>(null)
@@ -50,6 +57,9 @@ export default function TransactionsPage() {
       if (categoryFilter !== 'all') params.category_id = categoryFilter
       if (tierFilter !== 'all') params.tier = tierFilter
       if (flowFilter !== 'all') params.flow_type = flowFilter
+      if (uncategorisedOnly) params.uncategorised_only = true
+      if (sortBy) params.sort_by = sortBy
+      if (sortDir) params.sort_dir = sortDir
 
       const r = await api.get('/transactions', { params })
       setData(r.data)
@@ -58,7 +68,7 @@ export default function TransactionsPage() {
     } finally {
       setLoading(false)
     }
-  }, [page, search, accountFilter, categoryFilter, tierFilter, flowFilter, dateParams])
+  }, [page, search, accountFilter, categoryFilter, tierFilter, flowFilter, uncategorisedOnly, sortBy, sortDir, dateParams])
 
   useEffect(() => {
     fetchTransactions()
@@ -111,7 +121,55 @@ export default function TransactionsPage() {
     }
   }
 
+  const handleSort = (field: SortField) => {
+    if (sortBy === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortBy(field)
+      setSortDir('desc')
+    }
+    setPage(1)
+  }
+
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortBy !== field) return <ArrowUpDown className="h-3 w-3 ml-1 opacity-30" />
+    return sortDir === 'asc'
+      ? <ArrowUp className="h-3 w-3 ml-1" />
+      : <ArrowDown className="h-3 w-3 ml-1" />
+  }
+
   const totalPages = data ? Math.ceil(data.total / data.page_size) : 1
+
+  const handleJumpPage = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const p = parseInt(jumpPage)
+      if (!isNaN(p) && p >= 1 && p <= totalPages) {
+        setPage(p)
+      }
+      setJumpPage('')
+    }
+  }
+
+  // Generate page numbers to display
+  const getPageNumbers = (): (number | '...')[] => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1)
+    }
+    const pages: (number | '...')[] = []
+    // Always show first page
+    pages.push(1)
+    if (page > 3) pages.push('...')
+    // Pages around current
+    const start = Math.max(2, page - 1)
+    const end = Math.min(totalPages - 1, page + 1)
+    for (let i = start; i <= end; i++) {
+      pages.push(i)
+    }
+    if (page < totalPages - 2) pages.push('...')
+    // Always show last page
+    if (totalPages > 1) pages.push(totalPages)
+    return pages
+  }
 
   return (
     <div className="space-y-4">
@@ -179,6 +237,14 @@ export default function TransactionsPage() {
                 <SelectItem value="transfer">Transfer</SelectItem>
               </SelectContent>
             </Select>
+            <Button
+              variant={uncategorisedOnly ? "default" : "outline"}
+              size="sm"
+              onClick={() => { setUncategorisedOnly(v => !v); setPage(1) }}
+              className={uncategorisedOnly ? "bg-amber-600 hover:bg-amber-700 text-white" : ""}
+            >
+              Uncategorised
+            </Button>
           </div>
 
           {selected.size > 0 && (
@@ -213,13 +279,33 @@ export default function TransactionsPage() {
                         onCheckedChange={toggleAll}
                       />
                     </TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead
+                      className="cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort('date')}
+                    >
+                      <span className="flex items-center">Date<SortIcon field="date" /></span>
+                    </TableHead>
                     <TableHead>Account</TableHead>
-                    <TableHead>Description</TableHead>
+                    <TableHead
+                      className="cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort('description')}
+                    >
+                      <span className="flex items-center">Description<SortIcon field="description" /></span>
+                    </TableHead>
                     <TableHead>Item</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead>Tier</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead
+                      className="cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort('tier')}
+                    >
+                      <span className="flex items-center">Tier<SortIcon field="tier" /></span>
+                    </TableHead>
+                    <TableHead
+                      className="text-right cursor-pointer select-none hover:text-foreground"
+                      onClick={() => handleSort('amount')}
+                    >
+                      <span className="flex items-center justify-end">Amount<SortIcon field="amount" /></span>
+                    </TableHead>
                     <TableHead className="w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -274,25 +360,78 @@ export default function TransactionsPage() {
               {/* Pagination */}
               <div className="flex items-center justify-between p-4 border-t border-border/50">
                 <span className="text-sm text-muted-foreground">
-                  Page {data.page} of {totalPages}
+                  Page {data.page} of {totalPages} · {data.total} total
                 </span>
-                <div className="flex gap-2">
+                <div className="flex items-center gap-1">
+                  {/* First */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1}
+                    onClick={() => setPage(1)}
+                    className="px-2"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                  {/* Prev */}
                   <Button
                     variant="outline"
                     size="sm"
                     disabled={page <= 1}
                     onClick={() => setPage(p => p - 1)}
+                    className="px-2"
                   >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
+
+                  {/* Page numbers */}
+                  {getPageNumbers().map((p, i) =>
+                    p === '...' ? (
+                      <span key={`ellipsis-${i}`} className="px-2 text-sm text-muted-foreground">…</span>
+                    ) : (
+                      <Button
+                        key={p}
+                        variant={p === page ? "default" : "outline"}
+                        size="sm"
+                        className="px-3 min-w-[36px]"
+                        onClick={() => setPage(p)}
+                      >
+                        {p}
+                      </Button>
+                    )
+                  )}
+
+                  {/* Next */}
                   <Button
                     variant="outline"
                     size="sm"
                     disabled={page >= totalPages}
                     onClick={() => setPage(p => p + 1)}
+                    className="px-2"
                   >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
+                  {/* Last */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages}
+                    onClick={() => setPage(totalPages)}
+                    className="px-2"
+                  >
+                    <ChevronsRight className="h-4 w-4" />
+                  </Button>
+
+                  {/* Jump to page */}
+                  {totalPages > 7 && (
+                    <Input
+                      placeholder="Go to…"
+                      value={jumpPage}
+                      onChange={e => setJumpPage(e.target.value.replace(/\D/g, ''))}
+                      onKeyDown={handleJumpPage}
+                      className="w-[80px] ml-2 text-center text-sm"
+                    />
+                  )}
                 </div>
               </div>
             </>
