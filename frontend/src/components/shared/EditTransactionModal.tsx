@@ -93,11 +93,12 @@ export function EditTransactionModal({ open, onOpenChange, transaction, onSaved 
 
           <div className="space-y-2">
             <Label>Tier</Label>
-            <Select value={tier} onValueChange={setTier}>
+            <Select value={tier || '__none__'} onValueChange={v => setTier(v === '__none__' ? '' : v)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select tier" />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="__none__">None</SelectItem>
                 {TIERS.map(t => (
                   <SelectItem key={t} value={t}>
                     <TierBadge tier={t} />
