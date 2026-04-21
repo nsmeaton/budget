@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, TrendingUp, List, Upload, Tag, Zap, CreditCard, LogOut,
+  LayoutDashboard, TrendingUp, List, Upload, Tag, Zap, CreditCard, LogOut, Calendar,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -9,6 +9,7 @@ const NAV_SECTIONS = [
     label: 'OVERVIEW',
     items: [
       { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+      { to: '/month', icon: Calendar, label: 'Month Overview' },
       { to: '/trends', icon: TrendingUp, label: 'Trends' },
     ],
   },

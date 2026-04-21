@@ -10,6 +10,7 @@ import ImportPage from './pages/ImportPage'
 import CategoriesPage from './pages/CategoriesPage'
 import RulesPage from './pages/RulesPage'
 import AccountsPage from './pages/AccountsPage'
+import MonthOverviewPage from './pages/MonthOverviewPage'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { token, loading } = useAuth()
@@ -30,6 +31,7 @@ function AppRoutes() {
               <AppLayout>
                 <Routes>
                   <Route path="/" element={<DashboardPage />} />
+                  <Route path="/month" element={<MonthOverviewPage />} />
                   <Route path="/trends" element={<TrendsPage />} />
                   <Route path="/transactions" element={<TransactionsPage />} />
                   <Route path="/import" element={<ImportPage />} />
