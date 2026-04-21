@@ -50,7 +50,7 @@ def list_groups(db: Session = Depends(get_db), user: User = Depends(get_current_
 @router.get("", response_model=list[CategoryResponse])
 def list_categories(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
     """Flat list of all categories."""
-    cats = db.query(Category).order_by(Category.name).all()
+    cats = db.query(Category).join(CategoryGroup).order_by(CategoryGroup.name, Category.name).all()
     result = []
     for c in cats:
         tx_count = db.query(func.count(Transaction.id)).filter(
