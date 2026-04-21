@@ -106,12 +106,16 @@ def get_dashboard(
     essential_months = [m.spending_essential for m in sorted_months if m.spending_essential > 0]
     avg_essential = sum(essential_months) / len(essential_months) if essential_months else 0.0
 
+    ess_opt_months = [m.spending_essential + m.spending_optional for m in sorted_months if (m.spending_essential + m.spending_optional) > 0]
+    avg_essential_optional = sum(ess_opt_months) / len(ess_opt_months) if ess_opt_months else 0.0
+
     savings_rate = (total_savings / total_income * 100) if total_income > 0 else 0.0
 
     kpis = DashboardKPIs(
         total_income=total_income,
         total_spending=total_spending,
         avg_monthly_essential=round(avg_essential, 2),
+        avg_monthly_essential_optional=round(avg_essential_optional, 2),
         total_savings=total_savings,
         savings_rate=round(savings_rate, 1),
     )

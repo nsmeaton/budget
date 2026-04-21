@@ -53,7 +53,7 @@ export default function DashboardPage() {
       <h1 className="text-2xl font-bold">Dashboard</h1>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <KPICard
           title="Total Income"
           value={formatCurrency(kpis.total_income)}
@@ -72,6 +72,12 @@ export default function DashboardPage() {
           subtitle="Your baseline cost of living"
           color="text-red-300"
           badge="KEY STAT"
+        />
+        <KPICard
+          title="Avg Monthly Ess. + Opt."
+          value={formatCurrency(kpis.avg_monthly_essential_optional)}
+          subtitle="Comfortable monthly spend"
+          color="text-amber-400"
         />
         <KPICard
           title="Total Savings"

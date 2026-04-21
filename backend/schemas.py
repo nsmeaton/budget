@@ -279,6 +279,7 @@ class DashboardKPIs(BaseModel):
     total_income: float
     total_spending: float
     avg_monthly_essential: float
+    avg_monthly_essential_optional: float
     total_savings: float
     savings_rate: float  # percentage
     income_change_pct: Optional[float] = None
