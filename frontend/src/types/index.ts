@@ -105,6 +105,7 @@ export interface DashboardKPIs {
   total_income: number
   total_spending: number
   avg_monthly_essential: number
+  avg_monthly_essential_optional: number
   total_savings: number
   savings_rate: number
   income_change_pct: number | null
