@@ -279,7 +279,7 @@ export default function MonthOverviewPage() {
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
                       labelStyle={{ color: '#ccc' }}
-                      formatter={(value: number) => formatCurrency(value)}
+                      formatter={(value: any) => formatCurrency(Number(value))}
                     />
                     <Bar dataKey="value" radius={[0, 2, 2, 0]}>
                       {summaryChartData.map((entry, i) => (
@@ -306,7 +306,7 @@ export default function MonthOverviewPage() {
                       cx="50%"
                       cy="50%"
                       outerRadius={80}
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }: any) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
                       labelLine={false}
                     >
                       {tierData.map((entry, i) => (
@@ -315,7 +315,7 @@ export default function MonthOverviewPage() {
                     </Pie>
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
-                      formatter={(value: number) => formatCurrency(value)}
+                      formatter={(value: any) => formatCurrency(Number(value))}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -341,7 +341,7 @@ export default function MonthOverviewPage() {
                     />
                     <Tooltip
                       contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
-                      formatter={(value: number) => formatCurrency(value)}
+                      formatter={(value: any) => formatCurrency(Number(value))}
                     />
                     <Bar dataKey="value" fill="#60a5fa" radius={[0, 2, 2, 0]} />
                   </BarChart>

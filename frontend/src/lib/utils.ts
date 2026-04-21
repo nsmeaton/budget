@@ -39,3 +39,10 @@ export function monthLabel(m: string): string {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
   return months[parseInt(month, 10) - 1] || m
 }
+
+export const MASKED_AMOUNT = '£•••••'
+
+export function maskedCurrency(amount: number, hidden: boolean, opts?: { showSign?: boolean; absolute?: boolean }): string {
+  if (hidden) return MASKED_AMOUNT
+  return formatCurrency(amount, opts)
+}
