@@ -7,21 +7,30 @@ import { TIER_CHART_COLORS } from '@/components/shared/TierBadge'
 import api from '@/api/client'
 import type { DashboardResponse } from '@/types'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell,
 } from 'recharts'
+
+const PIE_COLORS = ['#60a5fa', '#f472b6', '#a78bfa', '#34d399', '#fbbf24', '#fb923c', '#818cf8', '#f87171', '#38bdf8', '#4ade80', '#e879f9', '#facc15', '#2dd4bf', '#c084fc', '#fb7185']
 
 export default function DashboardPage() {
   const { dateParams } = useDateRange()
   const { hideAmounts } = usePrivacy()
   const [data, setData] = useState<DashboardResponse | null>(null)
+  const [topCategories, setTopCategories] = useState<{category_name: string, total: number, percentage: number}[]>([])
   const [loading, setLoading] = useState(true)
 
   const fc = (amount: number) => maskedCurrency(amount, hideAmounts)
 
   useEffect(() => {
     setLoading(true)
-    api.get('/dashboard', { params: dateParams })
-      .then(r => setData(r.data))
+    Promise.all([
+      api.get('/dashboard', { params: dateParams }),
+      api.get('/trends', { params: dateParams }),
+    ])
+      .then(([dashRes, trendsRes]) => {
+        setData(dashRes.data)
+        setTopCategories(trendsRes.data.top_categories || [])
+      })
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [dateParams.date_from, dateParams.date_to])
@@ -169,6 +178,57 @@ export default function DashboardPage() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
+
+      {/* Top Spending Categories */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card className="bg-[#1a1a1a] border-border/50">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Top Spending Categories</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={topCategories.map(c => ({ name: c.category_name, value: c.total }))} layout="vertical">
+                <CartesianGrid strokeDasharray="3 3" stroke="#333" />
+                <XAxis type="number" tick={{ fill: '#888', fontSize: 12 }} tickFormatter={v => hideAmounts ? '•••' : v} />
+                <YAxis
+                  dataKey="name"
+                  type="category"
+                  tick={{ fill: '#888', fontSize: 10 }}
+                  width={120}
+                  interval={0}
+                />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1e1e2e', border: '1px solid #333', borderRadius: 8 }}
+                  formatter={tooltipFormatter}
+                />
+                <Bar dataKey="value" fill="#60a5fa" radius={[0, 2, 2, 0]}>
+                  {topCategories.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-[#1a1a1a] border-border/50">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">Category Breakdown</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {topCategories.map((cat, i) => (
+                <div key={cat.category_name} className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: PIE_COLORS[i % PIE_COLORS.length] }} />
+                  <span className="text-sm flex-1 truncate">{cat.category_name}</span>
+                  <span className="text-sm text-muted-foreground">{cat.percentage}%</span>
+                  <span className="text-sm font-medium">{fc(cat.total)}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Monthly Breakdown Table */}
       <Card className="bg-[#1a1a1a] border-border/50">
